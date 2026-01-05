@@ -1,4 +1,4 @@
-{
+return {
   global_expire = "2026-01-07",
 
   users = {
