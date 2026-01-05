@@ -22,10 +22,12 @@ body{background:#000;color:#fff;font-family:monospace}
 
 <script>
 const repo = "billalaryap-ctrl/b2al-config";
+const file = "config.lua";
 
 async function loadConfig(){
+
   const res = await fetch(
-    `https://raw.githubusercontent.com/${repo}/main/config.json`
+    `https://raw.githubusercontent.com/${repo}/main/${file}`
   );
 
   if(!res.ok){
@@ -33,29 +35,51 @@ async function loadConfig(){
     return;
   }
 
-  const cfg = await res.json();
+  const text = await res.text();
+
+  // ==== Convert Lua table -> JSON ====
+  const lua = text
+    .replace(/^return\s*/,'')
+    .replace(/--.*$/gm,"")
+    .replace(/\s+/g," ")
+    .replace(/=/g,":")
+    .replace(/([a-zA-Z0-9_]+)\s*:/g,'" $1" :')
+    .replace(/'/g,'"')
+    .replace(/,(\s*})/g,"$1")
+    .replace(/,(\s*])/g,"$1");
+
+  const cfg = JSON.parse(lua);
   window.CONFIG = cfg;
 
   render(cfg);
 }
 
 function render(cfg){
-  const box = document.getElementById("users");
+
   document.getElementById("status").innerText =
     `Global Expire : ${cfg.global_expire}`;
 
+  const box = document.getElementById("users");
   box.innerHTML = "";
 
+  if(!cfg.users || cfg.users.length === 0){
+    box.innerHTML = "<p>Tidak ada user.</p>";
+    return;
+  }
+
   cfg.users.forEach((u,i)=>{
+
     box.innerHTML += `
       <div class="card">
-        User : ${u.user}<br>
-        Expire : ${u.expire}<br>
-        HWID : ${u.hwid || "(kosong)"}<br>
-        Status : ${u.ban ? "BANNED" : "ACTIVE"}<br><br>
+        User  : ${u.user}<br>
+        Expire: ${u.expire}<br>
+        HWID  : ${u.hwid || "(kosong / siap daftar)"}<br>
+        Status: ${u.ban ? "BANNED" : "ACTIVE"}<br><br>
 
         <button class="btn green" onclick="resetHWID(${i})">Reset HWID</button>
-        <button class="btn red" onclick="toggleBan(${i})">${u.ban?"Unban":"Ban"}</button>
+        <button class="btn red" onclick="toggleBan(${i})">
+          ${u.ban ? "Unban" : "Ban"}
+        </button>
         <button class="btn blue" onclick="extend(${i})">Extend</button>
       </div>
     `;
