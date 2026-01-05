@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>B2AL HWID & License Panel</title>
+
+<style>
+body{
+  background:#0d0d0d;
+  color:#fff;
+  font-family:monospace;
+}
+.box{
+  background:#111;
+  padding:15px;
+  margin:10px;
+  border-radius:10px;
+}
+.btn{padding:7px 12px;border-radius:7px;border:0}
+.green{background:#1dd75b}
+.red{background:#ff4444}
+.blue{background:#1d9cff}
+</style>
+
+</head>
+<body>
+
+<h2>B2AL HWID & License Panel</h2>
+<div id="status">Loading config...</div>
+<div id="users"></div>
+
+<script>
+const repo = "billalaryap-ctrl/b2al-config";
+const filePath = "config.lua";
+
+async function fetchConfig(){
+  const res = await fetch(
+    `https://raw.githubusercontent.com/${repo}/main/${filePath}`
+  );
+  const text = await res.text();
+
+  // convert lua -> json parsing simpel
+  const fixed = text
+    .replace(/return/g,"")
+    .replace(/\s+/g," ")
+    .replace(/=/g,":")
+    .replace(/--.*?,/g,"")
+    .replace(/,}/g,"}");
+
+  return eval("(" + fixed + ")");
+}
+
+function renderUsers(cfg){
+  const box = document.getElementById("users");
+  box.innerHTML = "";
+
+  if(!cfg.users || cfg.users.length === 0){
+    box.innerHTML = "<p>Tidak ada user.</p>";
+    return;
+  }
+
+  cfg.users.forEach((u,i)=>{
+
+    box.innerHTML += `
+      <div class="box">
+        <b>User:</b> ${u.user}<br>
+        <b>Expire:</b> ${u.expire}<br>
+        <b>HWID:</b> ${u.hwid || "(kosong)"}<br>
+        <b>Status:</b> ${u.ban ? "BANNED" : "ACTIVE"}<br><br>
+
+        <button class="btn green" onclick="resetHWID(${i})">Reset HWID</button>
+        <button class="btn red" onclick="toggleBan(${i})">${u.ban?"Unban":"Ban"}</button>
+        <button class="btn blue" onclick="extend(${i})">Extend</button>
+      </div>
+    `;
+  });
+
+  window.CONFIG = cfg;
+}
+
+async function pushUpdate(){
+  const token = prompt("Masukkan GitHub Token:");
+
+  const resSHA = await fetch(
+    `https://api.github.com/repos/${repo}/contents/${filePath}`
+  );
+  const meta = await resSHA.json();
+
+  const body = btoa(
+    "return " + JSON.stringify(window.CONFIG,null,4)
+  );
+
+  await fetch(
+    `https://api.github.com/repos/${repo}/contents/${filePath}`,
+    {
+      method:"PUT",
+      headers:{Authorization:`Bearer ${token}`},
+      body:JSON.stringify({
+        message:"Panel update",
+        content:body,
+        sha:meta.sha
+      })
+    }
+  );
+
+  alert("Config updated");
+}
+
+function resetHWID(i){
+  window.CONFIG.users[i].hwid = "";
+  pushUpdate();
+}
+
+function toggleBan(i){
+  window.CONFIG.users[i].ban = !window.CONFIG.users[i].ban;
+  pushUpdate();
+}
+
+function extend(i){
+  let d = prompt("Perpanjang sampai (YYYY-MM-DD):",
+                 window.CONFIG.users[i].expire);
+  if(!d)return;
+  window.CONFIG.users[i].expire = d;
+  pushUpdate();
+}
+
+(async ()=>{
+  try{
+    const cfg = await fetchConfig();
+    renderUsers(cfg);
+    document.getElementById("status").innerText = "Repo: b2al-config";
+  }catch(e){
+    document.getElementById("status").innerText = "Gagal load config";
+  }
+})();
+</script>
+
+</body>
+</html>
