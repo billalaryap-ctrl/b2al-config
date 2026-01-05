@@ -1,18 +1,18 @@
 return {
-  global_expire = "2026-01-07",
+    global_expire = "2026-01-07",
 
-  users = {
+    users = {
 
-    {
-      user = "b2al",
-      pass = "0",
-      key  = "B2AL-vip",
+        {
+            user   = "b2al",
+            pass   = "0",
+            key    = "B2AL-vip",
 
-      hwid = "",
-      expire = "2026-01-07",
+            hwid   = "",              -- kosong = siap daftar
+            expire = "2026-01-07",    -- tanggal user
 
-      ban = false,
+            ban    = false            -- toggle via panel
+        }
+
     }
-
-  }
 }
