@@ -26,70 +26,119 @@ body{
 <body>
 
 <h2>B2AL HWID & License Panel</h2>
-<div id="status">Loading config...</div>
+Repo: b2al-config
+<br><br>
+
+<div id="status">Memuat data...</div>
 <div id="users"></div>
 
 <script>
+
 const repo = "billalaryap-ctrl/b2al-config";
-const filePath = "config.lua";
+const filePath = "config.json";
 
+let CONFIG = null;
+
+// =========================
+// FETCH CONFIG.JSON
+// =========================
 async function fetchConfig(){
-  const res = await fetch(
-    `https://raw.githubusercontent.com/${repo}/main/${filePath}`
-  );
-  const text = await res.text();
+  try{
+    const res = await fetch(
+      `https://raw.githubusercontent.com/${repo}/main/${filePath}`
+    );
 
-  // convert lua -> json parsing simpel
-  const fixed = text
-    .replace(/return/g,"")
-    .replace(/\s+/g," ")
-    .replace(/=/g,":")
-    .replace(/--.*?,/g,"")
-    .replace(/,}/g,"}");
+    CONFIG = await res.json();
 
-  return eval("(" + fixed + ")");
+    document.getElementById("status").innerHTML =
+      `Global Expire: ${CONFIG.global_expire}`;
+
+    renderUsers();
+
+  }catch(e){
+    document.getElementById("status").innerHTML =
+      "❌ Gagal load config";
+  }
 }
 
-function renderUsers(cfg){
+// =========================
+// RENDER USER LIST
+// =========================
+function renderUsers(){
+
   const box = document.getElementById("users");
   box.innerHTML = "";
 
-  if(!cfg.users || cfg.users.length === 0){
-    box.innerHTML = "<p>Tidak ada user.</p>";
+  if(!CONFIG.users || CONFIG.users.length === 0){
+    box.innerHTML = "<p>Tidak ada user ditemukan</p>";
     return;
   }
 
-  cfg.users.forEach((u,i)=>{
+  CONFIG.users.forEach((u,i)=>{
 
     box.innerHTML += `
       <div class="box">
         <b>User:</b> ${u.user}<br>
         <b>Expire:</b> ${u.expire}<br>
-        <b>HWID:</b> ${u.hwid || "(kosong)"}<br>
-        <b>Status:</b> ${u.ban ? "BANNED" : "ACTIVE"}<br><br>
+        <b>HWID:</b> ${u.hwid || "(kosong / siap daftar)"}<br>
+        <b>Status:</b> ${u.ban ? "🚫 BANNED" : "🟢 ACTIVE"}<br><br>
 
         <button class="btn green" onclick="resetHWID(${i})">Reset HWID</button>
-        <button class="btn red" onclick="toggleBan(${i})">${u.ban?"Unban":"Ban"}</button>
+        <button class="btn red" onclick="toggleBan(${i})">
+          ${u.ban ? "Unban" : "Ban"}
+        </button>
         <button class="btn blue" onclick="extend(${i})">Extend</button>
       </div>
     `;
   });
-
-  window.CONFIG = cfg;
 }
 
+// =========================
+// EDIT ACTIONS
+// =========================
+function resetHWID(i){
+  CONFIG.users[i].hwid = "";
+  alert("HWID direset");
+  pushUpdate();
+}
+
+function toggleBan(i){
+  CONFIG.users[i].ban = !CONFIG.users[i].ban;
+  pushUpdate();
+}
+
+function extend(i){
+  const tgl = prompt("Masukkan tanggal baru (YYYY-MM-DD):",
+                     CONFIG.users[i].expire);
+
+  if(!tgl) return;
+
+  CONFIG.users[i].expire = tgl;
+  pushUpdate();
+}
+
+// =========================
+// UPDATE FILE KE GITHUB
+// =========================
 async function pushUpdate(){
+
   const token = prompt("Masukkan GitHub Token:");
 
-  const resSHA = await fetch(
+  if(!token){
+    alert("Token wajib diisi");
+    return;
+  }
+
+  // ambil SHA file lama
+  const metaReq = await fetch(
     `https://api.github.com/repos/${repo}/contents/${filePath}`
   );
-  const meta = await resSHA.json();
+  const meta = await metaReq.json();
 
-  const body = btoa(
-    "return " + JSON.stringify(window.CONFIG,null,4)
-  );
+  // encode JSON
+  const body = btoa(JSON.stringify(CONFIG,null,2));
 
+  // push
   await fetch(
     `https://api.github.com/repos/${repo}/contents/${filePath}`,
     {
@@ -103,36 +152,12 @@ async function pushUpdate(){
     }
   );
 
-  alert("Config updated");
+  alert("✔️ Config berhasil disimpan");
+  fetchConfig();
 }
 
-function resetHWID(i){
-  window.CONFIG.users[i].hwid = "";
-  pushUpdate();
-}
+fetchConfig();
 
-function toggleBan(i){
-  window.CONFIG.users[i].ban = !window.CONFIG.users[i].ban;
-  pushUpdate();
-}
-
-function extend(i){
-  let d = prompt("Perpanjang sampai (YYYY-MM-DD):",
-                 window.CONFIG.users[i].expire);
-  if(!d)return;
-  window.CONFIG.users[i].expire = d;
-  pushUpdate();
-}
-
-(async ()=>{
-  try{
-    const cfg = await fetchConfig();
-    renderUsers(cfg);
-    document.getElementById("status").innerText = "Repo: b2al-config";
-  }catch(e){
-    document.getElementById("status").innerText = "Gagal load config";
-  }
-})();
 </script>
 
 </body>
