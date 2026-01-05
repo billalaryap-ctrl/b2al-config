@@ -5,27 +5,12 @@
 <title>B2AL HWID & License Panel</title>
 
 <style>
-body{
-  background:#000;
-  color:#fff;
-  font-family:monospace;
-}
-.card{
-  background:#0f0f0f;
-  padding:12px;
-  margin:10px;
-  border-radius:12px;
-}
-.btn{
-  padding:6px 10px;
-  border-radius:8px;
-  border:0;
-  margin-right:6px
-}
+body{background:#000;color:#fff;font-family:monospace}
+.card{background:#0f0f0f;padding:12px;margin:10px;border-radius:12px}
+.btn{padding:6px 10px;border-radius:6px;border:0;margin-right:6px}
 .green{background:#00d46a}
 .red{background:#ff4040}
 .blue{background:#1d8bff}
-.yellow{background:#ffaa00}
 </style>
 </head>
 
@@ -41,61 +26,103 @@ body{
 const repo = "billalaryap-ctrl/b2al-config";
 const file = "config.json";
 
+const RAW =
+`https://raw.githubusercontent.com/${repo}/main/${file}`;
+const API =
+`https://api.github.com/repos/${repo}/contents/${file}`;
+
+let SHA = null;
+
 async function loadConfig(){
 
-  const res = await fetch(
-    `https://raw.githubusercontent.com/${repo}/main/${file}?t=`+Date.now()
-  );
+  const resMeta = await fetch(API);
+  const meta = await resMeta.json();
+  SHA = meta.sha;
 
-  if(!res.ok){
-    document.getElementById("status").innerText =
-      "Gagal load config.json";
-    return;
-  }
-
+  const res = await fetch(RAW + "?t=" + Date.now());
   const cfg = await res.json();
-  window.CONFIG = cfg;
 
+  window.CONFIG = cfg;
   render(cfg);
 }
 
 function render(cfg){
 
   document.getElementById("status").innerText =
-    `Repo: ${repo}\nGlobal Expire: ${cfg.global_expire}`;
+    "Global Expire: " + cfg.global_expire;
 
   const box = document.getElementById("users");
   box.innerHTML = "";
-
-  if(!cfg.users || cfg.users.length === 0){
-    box.innerHTML = "<p>Tidak ada user</p>";
-    return;
-  }
 
   cfg.users.forEach((u,i)=>{
 
     box.innerHTML += `
       <div class="card">
 
-        <b>User:</b> ${u.user}<br>
-        <b>Expire:</b> ${u.expire}<br>
-        <b>HWID:</b> ${u.hwid || "(kosong / siap daftar)"}<br>
-        <b>Status:</b> ${u.ban ? "BANNED" : "ACTIVE"}<br><br>
+        User : ${u.user}<br>
+        Expire : ${u.expire}<br>
+        HWID : ${u.hwid || "(kosong / siap daftar)"}<br>
+        Status : ${u.ban ? "BANNED" : "ACTIVE"}<br><br>
 
-        <button class="btn green"
-        onclick="resetHWID(${i})">Reset HWID</button>
+        <button class="btn green" onclick="resetHWID(${i})">
+          Reset HWID
+        </button>
 
-        <button class="btn red"
-        onclick="toggleBan(${i})">
+        <button class="btn red" onclick="toggleBan(${i})">
           ${u.ban ? "Unban" : "Ban"}
         </button>
 
-        <button class="btn blue"
-        onclick="extend(${i})">Extend</button>
+        <button class="btn blue" onclick="extend(${i})">
+          Extend
+        </button>
 
       </div>
     `;
   });
+}
+
+async function pushUpdate(){
+
+  const token = prompt("Masukkan GitHub Token:");
+
+  const body = btoa(
+    JSON.stringify(CONFIG,null,2)
+  );
+
+  await fetch(API,{
+    method:"PUT",
+    headers:{Authorization:`Bearer ${token}`},
+    body:JSON.stringify({
+      message:"Panel Update",
+      content:body,
+      sha:SHA
+    })
+  });
+
+  alert("Config updated");
+}
+
+function resetHWID(i){
+  CONFIG.users[i].hwid = "";
+  pushUpdate();
+}
+
+function toggleBan(i){
+  CONFIG.users[i].ban = !CONFIG.users[i].ban;
+  pushUpdate();
+}
+
+function extend(i){
+
+  let old = CONFIG.users[i].expire;
+
+  let t = new Date(old);
+  t.setMonth(t.getMonth()+1);
+
+  let s = t.toISOString().slice(0,10);
+
+  CONFIG.users[i].expire = s;
+  pushUpdate();
 }
 
 loadConfig();
