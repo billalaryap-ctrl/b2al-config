@@ -1,5 +1,5 @@
 return {
-  global_expire = "2026-01-01",
+  global_expire = "2026-01-07",
 
   users = {
 
@@ -9,7 +9,7 @@ return {
       key  = "B2AL-vip",
 
       hwid = "",
-      expire = "2026-01-01",
+      expire = "2026-01-07",
 
       ban = false,
     }
