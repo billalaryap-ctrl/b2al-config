@@ -1,24 +1,26 @@
-{
-  "global_expire": "2026-01-07",
+return {
+    global_expire = "2026-01-07",
 
-  "sign_url": "https://raw.githubusercontent.com/billalaryap-ctrl/b2al-config/main/sig.txt",
-  "signature": "B2AL_PRIVATE_BUILD_V1",
+    sign_url = "https://raw.githubusercontent.com/billalaryap-ctrl/b2al-config/main/sig.txt",
+    signature = "B2AL_PRIVATE_BUILD_V1",
 
-  "log_url": "https://raw.githubusercontent.com/billalaryap-ctrl/b2al-config/main/log.txt",
+    log_url = "https://raw.githubusercontent.com/billalaryap-ctrl/b2al-config/main/log.txt",
 
-  "tg_notify": false,
-  "tg_bot_token": "",
-  "tg_chat_id": "",
+    tg_notify = false,
+    tg_bot_token = "",
+    tg_chat_id = "",
 
-  "users": [
-    {
-      "user": "b2al",
-      "pass": "0",
-      "key": "B2AL-VIP",
+    users = {
 
-      "hwid": "",
-      "expire": "2026-01-07",
-      "ban": false
+        {
+            user = "b2al",
+            pass = "0",
+            key  = "B2AL-VIP",
+
+            hwid = "",
+            expire = "2026-01-07",
+            ban = false
+        }
+
     }
-  ]
 }
