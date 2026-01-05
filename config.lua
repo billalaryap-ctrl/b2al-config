@@ -1,5 +1,5 @@
 return {
-  global_expire = "2026-01-07",
+  global_expire = "2026-01-01",
 
   users = {
 
