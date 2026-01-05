@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>B2AL Admin Panel</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body{background:#0c0c0c;color:#eee;font-family:Arial}
+.card{background:#141414;padding:16px;margin:10px;border-radius:12px}
+.btn{padding:8px 12px;border-radius:8px;border:none;margin-right:6px}
+.reset{background:#2ecc71}
+.ban{background:#e74c3c}
+.extend{background:#3498db}
+</style>
+</head>
+
+<body>
+<h2>B2AL HWID & License Panel</h2>
+<p>Repo: b2al-config</p>
+
+<div id="users">Loading...</div>
+
+<script>
+const repo = "billalaryap-ctrl/b2al-config";
+const filePath = "config.lua";
+
+async function loadConfig(){
+  const res = await fetch(
+    `https://raw.githubusercontent.com/${repo}/main/${filePath}`
+  );
+  const text = await res.text();
+  return text;
+}
+
+function parseUsers(lua){
+  let users=[];
+  const rg = /{([^}]+)}/g;
+  let m;
+  while((m = rg.exec(lua))!==null){
+    const block=m[1];
+    const u=(k)=>((block.match(new RegExp(k+'%s*=%s*"([^"]+)"'))||[])[1]||"");
+    users.push({
+      raw:block,
+      user:u("user"),
+      pass:u("pass"),
+      key:u("key"),
+      hwid:u("hwid"),
+      expire:u("expire"),
+      ban: block.includes("ban = true")
+    });
+  }
+  return users;
+}
+
+function render(users){
+  const box=document.getElementById("users");
+  box.innerHTML="";
+  users.forEach(u=>{
+    const d=document.createElement("div");
+    d.className="card";
+    d.innerHTML=`
+      <b>User:</b> ${u.user}<br>
+      <b>Expire:</b> ${u.expire}<br>
+      <b>HWID:</b> ${u.hwid || "(kosong / siap daftar)"}<br>
+      <b>Status:</b> ${u.ban?"BANNED":"ACTIVE"}<br><br>
+
+      <button class="btn reset" onclick="resetHWID('${u.user}')">
+        Reset HWID
+      </button>
+
+      <button class="btn ban" onclick="toggleBan('${u.user}')">
+        ${u.ban?"Unban":"Ban"}
+      </button>
+
+      <button class="btn extend" onclick="extend('${u.user}')">
+        Extend Expire
+      </button>
+    `;
+    box.appendChild(d);
+  });
+}
+
+async function commitEdit(modifier){
+  const cfg = await loadConfig();
+  const updated = modifier(cfg);
+
+  const res = await fetch(
+    `https://api.github.com/repos/${repo}/contents/${filePath}`,
+    {
+      method:"PUT",
+      headers:{
+        "Content-Type":"application/json",
+      },
+      body:JSON.stringify({
+        message:"Admin panel update",
+        content:btoa(unescape(encodeURIComponent(updated)))
+      })
+    }
+  );
+
+  alert("Update berhasil — reload panel");
+  location.reload();
+}
+
+async function resetHWID(name){
+  commitEdit(cfg=>cfg.replace(
+    new RegExp(`(user%s*=%s*"${name}"[\\s\\S]-?hwid%s*=%s*")[^"]*`),
+    `$1"`
+  ));
+}
+
+async function toggleBan(name){
+  commitEdit(cfg=>{
+    return cfg.includes(`user = "${name}"`) ?
+      cfg.replace(
+        new RegExp(`(user%s*=%s*"${name}"[\\s\\S]*?ban%s*=%s*)(true|false)`),
+        (m,p)=>p + (m.includes("true")?"false":"true")
+      ) :
+      cfg;
+  });
+}
+
+async function extend(name){
+  const d = prompt("Masukkan tanggal baru (YYYY-MM-DD)");
+  if(!d) return;
+  commitEdit(cfg=>cfg.replace(
+    new RegExp(`(user%s*=%s*"${name}"[\\s\\S]*?expire%s*=%s*")[^"]*`),
+    `$1${d}`
+  ));
+}
+
+loadConfig().then(cfg=>render(parseUsers(cfg)));
+</script>
+</body>
+</html>
