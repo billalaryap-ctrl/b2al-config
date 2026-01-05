@@ -5,22 +5,39 @@
 <title>B2AL HWID & License Panel</title>
 
 <style>
-body{background:#000;color:#fff;font-family:monospace}
-.card{background:#0f0f0f;padding:12px;margin:10px;border-radius:12px}
-.btn{padding:6px 10px;border-radius:6px;border:0;margin-right:6px}
+body{
+  background:#000;
+  color:#fff;
+  font-family:monospace;
+}
+.card{
+  background:#0f0f0f;
+  padding:12px;
+  margin:10px;
+  border-radius:12px;
+}
+.btn{
+  padding:6px 10px;
+  border-radius:8px;
+  border:0;
+  margin-right:6px
+}
 .green{background:#00d46a}
 .red{background:#ff4040}
 .blue{background:#1d8bff}
+.yellow{background:#ffaa00}
 </style>
 </head>
 
 <body>
 
 <h2>B2AL HWID & License Panel</h2>
+
 <div id="status">Loading config...</div>
 <div id="users"></div>
 
 <script>
+
 const repo = "billalaryap-ctrl/b2al-config";
 const file = "config.json";
 
@@ -31,7 +48,8 @@ async function loadConfig(){
   );
 
   if(!res.ok){
-    document.getElementById("status").innerText = "Gagal load config";
+    document.getElementById("status").innerText =
+      "Gagal load config.json";
     return;
   }
 
@@ -44,13 +62,13 @@ async function loadConfig(){
 function render(cfg){
 
   document.getElementById("status").innerText =
-    `Global Expire : ${cfg.global_expire}`;
+    `Repo: ${repo}\nGlobal Expire: ${cfg.global_expire}`;
 
   const box = document.getElementById("users");
   box.innerHTML = "";
 
   if(!cfg.users || cfg.users.length === 0){
-    box.innerHTML = "<p>Tidak ada user.</p>";
+    box.innerHTML = "<p>Tidak ada user</p>";
     return;
   }
 
@@ -58,22 +76,30 @@ function render(cfg){
 
     box.innerHTML += `
       <div class="card">
-        User   : ${u.user}<br>
-        Expire : ${u.expire}<br>
-        HWID   : ${u.hwid || "(kosong / siap daftar)"}<br>
-        Status : ${u.ban ? "BANNED" : "ACTIVE"}<br><br>
 
-        <button class="btn green" onclick="resetHWID(${i})">Reset HWID</button>
-        <button class="btn red" onclick="toggleBan(${i})">
+        <b>User:</b> ${u.user}<br>
+        <b>Expire:</b> ${u.expire}<br>
+        <b>HWID:</b> ${u.hwid || "(kosong / siap daftar)"}<br>
+        <b>Status:</b> ${u.ban ? "BANNED" : "ACTIVE"}<br><br>
+
+        <button class="btn green"
+        onclick="resetHWID(${i})">Reset HWID</button>
+
+        <button class="btn red"
+        onclick="toggleBan(${i})">
           ${u.ban ? "Unban" : "Ban"}
         </button>
-        <button class="btn blue" onclick="extend(${i})">Extend</button>
+
+        <button class="btn blue"
+        onclick="extend(${i})">Extend</button>
+
       </div>
     `;
   });
 }
 
 loadConfig();
+
 </script>
 
 </body>
