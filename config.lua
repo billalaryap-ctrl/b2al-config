@@ -7,8 +7,9 @@ return {
       user = "b2al",
       pass = "0",
       key  = "B2AL-vip",
-      hwid = nil,
-      expire = "2026-01-01"
+      hwid = "",              -- kosong = siap daftar HWID
+      expire = "2026-01-01",
+      ban = false             -- bisa di-toggle dari panel
     }
 
   }
