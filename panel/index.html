@@ -1,3 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>B2AL HWID Panel</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body{background:#0c0c0c;color:#eee;font-family:Arial}
+.card{background:#141414;padding:16px;margin:10px;border-radius:12px}
+.btn{padding:8px 12px;border-radius:8px;border:none;margin-right:6px}
+.reset{background:#2ecc71}
+.ban{background:#e74c3c}
+.extend{background:#3498db}
+</style>
+</head>
+
+<body>
+<h2>B2AL HWID & License Panel</h2>
+<p>Repo: b2al-config</p>
+
+<div id="users">Loading...</div>
+
 <script>
 const repo = "billalaryap-ctrl/b2al-config";
 const filePath = "config.lua";
@@ -9,44 +30,39 @@ async function loadConfig(){
   return await res.text();
 }
 
-// PARSER SUPPORT:
-// • tanpa koma di akhir user block
-// • komentar di dalam field
-// • format return { ... }
+// PARSER FULL KOMPATIBEL DENGAN FORMAT KAMU
 function parseUsers(lua){
   const users = [];
 
-  // ambil isi table users
-  const blockMatch = lua.match(/users%s*=%s*{([\\s\\S]*?)}/);
-  if(!blockMatch) return users;
+  const usersBlock = lua.match(/users%s*=%s*{([\\s\\S]*?)}/);
+  if(!usersBlock) return users;
 
-  const body = blockMatch[1];
+  const block = usersBlock[1];
 
-  // ambil setiap { ... } di dalam users
   const rg = /{([\\s\\S]*?)}/g;
   let m;
 
-  while((m = rg.exec(body)) !== null){
+  while((m = rg.exec(block)) !== null){
 
     const t = m[1];
 
-    const get = key => {
+    const val = key => {
       const r = t.match(new RegExp(key+`\\s*=\\s*"(.-)"`));
       return r ? r[1] : "";
     };
 
+    const user = val("user");
+    if(user === "") continue;
+
     users.push({
-      raw:t,
-      user:get("user"),
-      pass:get("pass"),
-      key:get("key"),
-      hwid:get("hwid"),
-      expire:get("expire"),
-      ban:/ban\\s*=\\s*true/.test(t)
+      user,
+      expire: val("expire"),
+      hwid: val("hwid"),
+      banned: /ban\\s*=\\s*true/.test(t)
     });
   }
 
-  return users.filter(u => u.user !== "");
+  return users;
 }
 
 function render(users){
@@ -66,10 +82,10 @@ function render(users){
       <b>User:</b> ${u.user}<br>
       <b>Expire:</b> ${u.expire}<br>
       <b>HWID:</b> ${u.hwid || "(kosong / siap daftar)"}<br>
-      <b>Status:</b> ${u.ban ? "BANNED" : "ACTIVE"}<br><br>
+      <b>Status:</b> ${u.banned ? "BANNED" : "ACTIVE"}<br><br>
 
       <button class="btn reset" onclick="resetHWID('${u.user}')">Reset HWID</button>
-      <button class="btn ban" onclick="toggleBan('${u.user}')">${u.ban ? "Unban" : "Ban"}</button>
+      <button class="btn ban" onclick="toggleBan('${u.user}')">${u.banned ? "Unban" : "Ban"}</button>
       <button class="btn extend" onclick="extendExpire('${u.user}')">Extend Expire</button>
     `;
 
@@ -87,7 +103,7 @@ async function commitEdit(modifier){
       method:"PUT",
       headers:{ "Content-Type":"application/json" },
       body:JSON.stringify({
-        message:"Panel update",
+        message:"panel update",
         content:btoa(unescape(encodeURIComponent(updated)))
       })
     }
@@ -129,3 +145,5 @@ async function extendExpire(name){
 
 loadConfig().then(cfg => render(parseUsers(cfg)));
 </script>
+</body>
+</html>
