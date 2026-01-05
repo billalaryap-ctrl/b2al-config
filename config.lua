@@ -8,7 +8,7 @@ return {
       pass = "0",
       key  = "B2AL-vip",
       hwid = nil,
-      expire = "2026-01-07"
+      expire = "2026-01-01"
     }
 
   }
