@@ -22,12 +22,12 @@ body{background:#000;color:#fff;font-family:monospace}
 
 <script>
 const repo = "billalaryap-ctrl/b2al-config";
-const file = "config.lua";
+const file = "config.json";
 
 async function loadConfig(){
 
   const res = await fetch(
-    `https://raw.githubusercontent.com/${repo}/main/${file}`
+    `https://raw.githubusercontent.com/${repo}/main/${file}?t=`+Date.now()
   );
 
   if(!res.ok){
@@ -35,20 +35,7 @@ async function loadConfig(){
     return;
   }
 
-  const text = await res.text();
-
-  // ==== Convert Lua table -> JSON ====
-  const lua = text
-    .replace(/^return\s*/,'')
-    .replace(/--.*$/gm,"")
-    .replace(/\s+/g," ")
-    .replace(/=/g,":")
-    .replace(/([a-zA-Z0-9_]+)\s*:/g,'" $1" :')
-    .replace(/'/g,'"')
-    .replace(/,(\s*})/g,"$1")
-    .replace(/,(\s*])/g,"$1");
-
-  const cfg = JSON.parse(lua);
+  const cfg = await res.json();
   window.CONFIG = cfg;
 
   render(cfg);
@@ -71,10 +58,10 @@ function render(cfg){
 
     box.innerHTML += `
       <div class="card">
-        User  : ${u.user}<br>
-        Expire: ${u.expire}<br>
-        HWID  : ${u.hwid || "(kosong / siap daftar)"}<br>
-        Status: ${u.ban ? "BANNED" : "ACTIVE"}<br><br>
+        User   : ${u.user}<br>
+        Expire : ${u.expire}<br>
+        HWID   : ${u.hwid || "(kosong / siap daftar)"}<br>
+        Status : ${u.ban ? "BANNED" : "ACTIVE"}<br><br>
 
         <button class="btn green" onclick="resetHWID(${i})">Reset HWID</button>
         <button class="btn red" onclick="toggleBan(${i})">
